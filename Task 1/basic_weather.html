@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Weather App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px;
+    }
+    #weatherResult {
+      display: none;
+      margin-top: 30px;
+      border: 1px solid #ccc;
+      padding: 15px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Weather App</h1>
+  <input type="text" id="locationInput" placeholder="Enter Indian city or zip code">
+  <button onclick="getWeather()">Get Weather</button>
+
+  <div id="weatherResult"></div>
+
+  <script>
+    const apiKey = 'YOUR_OPENWEATHERMAP_API_KEY'; // Replace with your key
+
+    function getWeather() {
+      const location = document.getElementById('locationInput').value.trim();
+
+      if (!location) {
+        alert("Please enter a city or zip code");
+        return;
+      }
+
+      const weatherAPI = `https://api.openweathermap.org/data/2.5/weather?q=${location},IN&appid=${apiKey}&units=metric`;
+
+      fetch(weatherAPI)
+        .then(res => res.json())
+        .then(data => {
+          if (data.cod !== 200) {
+            throw new Error(data.message);
+          }
+
+          const temperature = data.main.temp;
+          const description = data.weather[0].description;
+
+          document.getElementById('weatherResult').style.display = 'block';
+          document.getElementById('weatherResult').innerHTML = `
+            <h3>Weather for ${location}</h3>
+            <p>Temp: ${temperature}&#8451;</p>
+            <p>${description}</p>
+          `;
+        })
+        .catch(err => {
+          alert("Failed to fetch weather: " + err.message);
+        });
+    }
+  </script>
+</body>
+</html>
