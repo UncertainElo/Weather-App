@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Weather App with CRUD</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background-color: #f7f7f7;
+      text-align: center;
+      margin: 0;
+      padding: 40px;
+      position: relative;
+    }
+
+    
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 8px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #infoBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #28a745;
+      padding: 8px 12px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    #infoBtn:hover {
+      background-color: #1e7e34;
+    }
+
+    #weatherResult, #savedData {
+  display: none; /* Hidden initially */
+  margin-top: 30px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+    #weatherResult {
+      display: none; /* Hidden initially */
+    }
+
+    .entry {
+      border: 1px solid #ddd;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+    }
+
+    #statusMessage {
+      margin-top: 10px;
+      font-size: 14px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <button id="infoBtn" onclick="showInfo()">Info</button>
+  <h1>Weather App</h1>
+  <input type="text" id="locationInput" placeholder="Enter any city or Indian zip code">
+  <input type="date" id="dateInput">
+  <button onclick="getAndSaveWeather()">Show Weather</button>
+  <button onclick="loadSavedData()">View Saved Weather</button>
+  <button onclick="exportData('json')">Export JSON</button>
+  <button onclick="exportData('csv')">Export CSV</button>
+
+  <div id="statusMessage"></div>
+
+  <div id="weatherResult"></div>
+  <div id="savedData"></div>
+
+  <script>
+    const apiKey = 'db354ef4f84f74f5cb6e70c733cf1d4b'; // Replace with yours
+    const backendURL = 'http://localhost:3000';
+
+    function showStatus(msg, color = 'green') {
+      const status = document.getElementById('statusMessage');
+      status.innerText = msg;
+      status.style.color = color;
+      setTimeout(() => status.innerText = '', 3000);
+    }
+
+    function showInfo() {
+      alert("Created by Suryansh Dwivedi as a submission to:\nProduct Manager Accelerator (PMA): A company focused on accelerating PM careers.\n\nVisit their LinkedIn page:\nhttps://www.linkedin.com/company/product-manager-accelerator/");
+    }
+
+    function getAndSaveWeather() {
+      const location = document.getElementById('locationInput').value.trim();
+      const date = document.getElementById('dateInput').value;
+
+      if (!location || !date) {
+        showStatus("Enter both location and date", 'red');
+        return;
+      }
+
+      const weatherAPI = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`;
+
+      fetch(weatherAPI)
+        .then(res => res.json())
+        .then(data => {
+          const temperature = data.main.temp;
+          const description = data.weather[0].description;
+
+          document.getElementById('weatherResult').style.display = 'block';
+          document.getElementById('weatherResult').innerHTML = `
+            <h3>Weather for ${location}</h3>
+            <p>Date: ${date}</p>
+            <p>Temp: ${temperature}&#8451;</p>
+            <p>${description}</p>
+
+            <h4>Google Maps</h4>
+            <iframe
+              width="100%"
+              height="300"
+              frameborder="0"
+              style="border:0"
+              referrerpolicy="no-referrer-when-downgrade"
+              src="https://www.google.com/maps/embed/v1/place?key=AIzaSyCqXrn8bS674RZFGoD2qjJAco8JhSVJH1U&q=${encodeURIComponent(location)}"
+              allowfullscreen>
+            </iframe>
+
+            <h4>YouTube Video</h4>
+            <p><a href="https://www.youtube.com/results?search_query=weather+in+${encodeURIComponent(location)}" target="_blank">
+              Watch related weather video for ${location}</a></p>
+          `;
+
+
+          fetch(`${backendURL}/weather`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ location, date, temperature, description })
+          })
+          .then(res => res.text())
+          .then(msg => {
+            showStatus("Weather saved successfully!");
+            //loadSavedData();
+          });
+        })
+        .catch(() => showStatus("Failed to fetch weather.", 'red'));
+    }
+
+    function loadSavedData() {
+  const container = document.getElementById('savedData');
+  container.style.display = "block"; // Show it when this function runs
+
+  fetch(`${backendURL}/weather`)
+    .then(res => res.json())
+    .then(data => {
+      container.innerHTML = "<h3>Saved Weather Data</h3>";
+
+      data.forEach(entry => {
+        const div = document.createElement('div');
+        div.className = "entry";
+        div.innerHTML = `
+          <strong>${entry.location}</strong> on ${entry.date}<br>
+          <p>Temperature: ${entry.temperature}&#8451;</p>
+          <button onclick="deleteEntry('${entry._id}')">Delete</button>
+          <button onclick="editEntry('${entry._id}', '${entry.location}', '${entry.date}')">Edit</button>
+        `;
+        container.appendChild(div);
+      });
+    });
+}
+
+
+    function deleteEntry(id) {
+      fetch(`${backendURL}/weather/${id}`, { method: 'DELETE' })
+        .then(res => res.text())
+        .then(() => {
+          showStatus("Entry deleted.");
+          loadSavedData();
+        });
+    }
+
+    function editEntry(id, oldLocation, oldDate) {
+      const newLocation = prompt("Update location:", oldLocation);
+      const newDate = prompt("Update date:", oldDate);
+
+      if (!newLocation || !newDate) {
+        showStatus("Both location and date are required", 'red');
+        return;
+      }
+
+      const weatherAPI = `https://api.openweathermap.org/data/2.5/weather?q=${newLocation}&appid=${apiKey}&units=metric`;
+
+      fetch(weatherAPI)
+        .then(res => res.json())
+        .then(data => {
+          const newTemperature = data.main.temp;
+          const newDescription = data.weather[0].description;
+
+          fetch(`${backendURL}/weather/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              location: newLocation,
+              date: newDate,
+              temperature: newTemperature,
+              description: newDescription
+            })
+          })
+          .then(res => res.text())
+          .then(() => {
+            showStatus("Entry updated.");
+            loadSavedData();
+          });
+        })
+        .catch(() => showStatus("Failed to fetch updated weather data.", 'red'));
+    }
+
+    function exportData(format) {
+    fetch(`${backendURL}/weather`)
+      .then(res => res.json())
+      .then(data => {
+        if (format === 'json') {
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          downloadFile(blob, 'weather_data.json');
+        } else if (format === 'csv') {
+          const csvRows = [
+            ['Location', 'Date', 'Temperature', 'Description'],
+            ...data.map(d => [d.location, d.date, d.temperature, d.description])
+          ];
+          const csv = csvRows.map(r => r.join(',')).join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          downloadFile(blob, 'weather_data.csv');
+        }
+      });
+  }
+
+    function downloadFile(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+
+  </script>
+</body>
+</html>
