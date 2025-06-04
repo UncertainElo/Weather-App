@@ -1,4 +1,4 @@
-# Weather-App
+## Weather-App
 This project is a simple Weather App that allows users to enter city names and get the current weather information displayed. It fetches live weather data from an external API and presents it in a user-friendly interface.
 
 # How to run the app
@@ -19,6 +19,9 @@ Open the weather.html file present in each task.
 1. Node.js
 2. MongoDB atlas
 3. dotenv package
+
+# Database
+MongoDB (NoSQL document database)
 
 # APIs used
 1. Weather API
