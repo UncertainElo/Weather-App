@@ -1,0 +1,6 @@
+Following are the dependencies installed via npm ( Node Package manager ).
+
+express
+mongoose
+cors
+body-parser
